@@ -99,6 +99,15 @@ function step-message {
     generic-message -l "${stepLabel}" -p "Proceed?" "$@"
 }
 
+interactiveSteps=false
+
+function informed-step {
+    message="$1"; shift
+    { if $interactiveSteps; then step-message "$message"; else true; fi } && \
+        "$@" && \
+            { $interactiveSteps || success-message "$message"; }
+}
+
 function yesno-message {
     local answer prompt="$1"; shift
     remaining-args "$@"
