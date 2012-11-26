@@ -1,5 +1,8 @@
 #### bash-lib: Reusable shell scripting code.
 
+# For testing purposes, try
+# bash -c "source colors.sh; show-term-colors"
+
 ### Module preamble.
 
 source "$(dirname "${BASH_SOURCE[0]}")/modules.sh"

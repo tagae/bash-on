@@ -16,8 +16,8 @@ function git-is-repo {
     while getopts :f opt; do
         case $opt in
             (f) fail=true;;
-            (\?) unknown-option "$OPTARG";;
-            (:) missing-option-argument "$OPTARG";;
+            (\?) unknown-option;;
+            (:) missing-option-argument;;
         esac
     done
     shift $(($OPTIND-1))
@@ -34,13 +34,14 @@ function git-is-current-branch {
     while getopts :f opt; do
         case $opt in
             (f) fail=true;;
-            (\?) unknown-option "$OPTARG";;
-            (:) missing-option-argument "$OPTARG";;
+            (\?) unknown-option;;
+            (:) missing-option-argument;;
         esac
     done
     shift $(($OPTIND-1))
     # Check branch.
     branch="$1"; shift
+    required-arg branch
     remaining-args "$@"
     test "$(git-current-branch)" = "refs/heads/$branch" || {
         $fail && error-message "Current branch in $PWD is not $branch"
@@ -48,9 +49,10 @@ function git-is-current-branch {
 }
 
 function git-committed-files {
-    id="${1:-HEAD}"; shift
+    commitId="${1:-HEAD}"; shift
+    required-arg commitId "commit id"
     remaining-args "$@"
-    git diff-tree -r --name-only --no-commit-id "$id"
+    git diff-tree -r --name-only --no-commit-id "$commitId"
 }
 
 function git-current-branch {

@@ -6,34 +6,99 @@ source "$(dirname "${BASH_SOURCE[0]}")/modules.sh"
 provide-module || return
 require-module interaction
 
-### Files.
+### File names.
 
-function realdir {
-    local dir=$(dirname "$1")
-    if pushd "$dir" > /dev/null 2>&1; then
+function absolute-dirname {
+    local dirname=$(dirname "$1"); shift
+    required-arg dirname "directory name"
+    remaining-args "$@"
+    if pushd "$dirname" > /dev/null 2>&1; then
         pwd
         popd > /dev/null
     else
-        echo "$dir"
+        echo "$dirname"
     fi
 }
 
-function realpath {
-    echo "$(realdir "$1")/$(basename "$1")"
+# absolute-filename <filename>
+#
+# Prints the absolute name of <filename>.
+#
+function absolute-filename {
+    local filename="$1"; shift
+    required-arg filename "file name"
+    remaining-args "$@"
+    echo "$(absolute-dirname "$filename")/$(basename "$filename")"
 }
 
+# relative-filename [-c] [-b <base>] <filename>
+#
+# Prints <filename> relative to directory <base>.
+#
+# If <base> is omitted, it is assumed to be the current directory.
+#
+# If <filename> is not under the <base> hierarchy, print an error
+# message and exit with a failure.
+#
+# With -c, print <filename> without modification, and return false
+# (rather than exiting).
+#
+function relative-filename {
+    # Process options.
+    local base="$PWD" fail=true
+    OPTIND=1
+    while getopts :b:c opt; do
+        case $opt in
+            (b) base="$OPTARG";;
+            (c) fail=false;;
+            (\?) unknown-option;;
+            (:) missing-option-argument;;
+        esac
+    done
+    shift $(($OPTIND-1))
+    # Process arguments.
+    local filename="$1"; shift
+    required-arg filename "file name"
+    remaining-args "$@"
+    # Relativise filename.
+    if [[ $(absolute-filename "$filename") =~ ^$base/(.+) ]]; then
+        echo "${BASH_REMATCH[1]}"
+    else
+        if $fail; then
+            error-message "$filename does not reside in $base."
+        else
+            echo "$filename"
+            return false
+        fi
+    fi
+}
+
+### Commands.
+
 function command-available {
-    which "$1" > /dev/null
+    # Process options.
+    local command="$1"; shift
+    required-arg command
+    remaining-args "$@"
+    which "$command" > /dev/null
 }
 
 function ensure-dir {
-    local dir=$1
-    test -d "$dir" || mkdir -p "$dir"
+    local directory="$1"; shift
+    required-arg directory
+    remaining-args "$@"
+    test -d "$directory" || mkdir -p "$directory"
 }
 
 ### Informed actions.
 
 function informed-symlink {
+    local source="$1"; shift
+    local target="$1"; shift
+    required-arg source
+    required-arg target
+    remaining-args "$@"
+
     informed-step "Symlink $1 to $2${3:+ in $3}" ln -s "$1" "$2"
 }
 
