@@ -28,7 +28,7 @@ function provide-module {
     remaining-args "$@"
     local scriptId="bash_module_$module"
     # Return true if not loaded.
-    [ -z "${!scriptId}" ] && export "$scriptId"="$modulesHome/$module.sh"
+    [ -z "${!scriptId}" ] && declare "$scriptId"="$modulesHome/$module.sh"
 }
 
 function require-module {
