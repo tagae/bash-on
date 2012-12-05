@@ -11,16 +11,17 @@ require-module colors
 
 ### Main colors.
 
-debugColor=$(tput setaf 6)
-infoColor=$(tput setaf 7)
-noticeColor=$(tput setaf 7)
-warnColor=$(tput setaf 3)
-errorColor=${termBold}$(tput setaf 1)
-stepColor=$(tput setaf 4)
-internalColor=$(tput setaf 5)
-successColor=$(tput setaf 2)
-
-highlightColor=$(tput setaf 7)
+if [ -n "$TERM" ]; then
+    debugColor=$(tput setaf 6)
+    infoColor=$(tput setaf 7)
+    noticeColor=$(tput setaf 7)
+    warnColor=$(tput setaf 3)
+    errorColor=${termBold}$(tput setaf 1)
+    stepColor=$(tput setaf 4)
+    internalColor=$(tput setaf 5)
+    successColor=$(tput setaf 2)
+    highlightColor=$(tput setaf 7)
+fi
 
 ### Main labels.
 

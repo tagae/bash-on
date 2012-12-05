@@ -7,10 +7,12 @@ provide-module || return
 
 ### Display modifiers.
 
-termUnderline=$(tput sgr 0 1)
-termBold=$(tput bold)
-termStrong=$(tput smso)
-termPlain=$(tput sgr0)
+if [ -n "$TERM" ]; then
+    termUnderline=$(tput sgr 0 1)
+    termBold=$(tput bold)
+    termStrong=$(tput smso)
+    termPlain=$(tput sgr0)
+fi
 
 # See http://linuxtidbits.wordpress.com/2008/08/11/output-color-on-bash-scripts/
 
