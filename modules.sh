@@ -1,32 +1,42 @@
-#### bash-lib: Reusable shell scripting code.
+#### bash-on: Reusable shell scripting code.
 
 # Avoid including this module twice, through other means than the
-# module management code itself.
-type -t require-module | egrep -q 'function' && return
+# module management code itself. This is a bootstrapping measure.
+[[ $(type -t require-module) =~ ^function$ ]] && return
 
-### Modules.
-
-pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null
-modulesHome=$PWD
-popd > /dev/null
+### Scripting.
 
 function remaining-args {
     true # no-op until redefined by 'scripting' module
 }
 
+function required-arg {
+    true # no-op until redefined by 'scripting' module
+}
+
+### Modules.
+
+if pushd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null; then
+    modulesHome=$PWD
+    popd > /dev/null
+else
+    exit 1
+fi
+
 function provide-module {
-    module=$1; shift
-    remaining-args $@
-    test -n "$module" || module=$(basename ${BASH_SOURCE[1]} .sh)
-    local scriptId=bash_module_$module
+    local module="${1:-$(basename ${BASH_SOURCE[1]} .sh)}"; shift
+    remaining-args "$@"
+    local scriptId=${module}_module
     # Return true if not loaded.
-    test -z "${!scriptId}" && export "$scriptId"=$modulesHome/$module.sh
+    [ -z "${!scriptId}" ] && declare -rg "$scriptId"="$modulesHome/$module.sh"
 }
 
 function require-module {
-    module=$1; shift
-    remaining-args $@
+    local module="$1"; shift
+    required-arg module "module name"
+    remaining-args "$@"
     source "$modulesHome/$module.sh"
 }
 
+provide-module # declare this module as provided
 require-module scripting # used internally (e.g. remaining-args)

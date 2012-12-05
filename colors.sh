@@ -1,4 +1,7 @@
-#### bash-lib: Reusable shell scripting code.
+#### bash-on: Reusable shell scripting code.
+
+# For testing purposes, try
+# bash -c "source colors.sh; show-term-colors"
 
 ### Module preamble.
 
