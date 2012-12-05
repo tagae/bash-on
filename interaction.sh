@@ -15,35 +15,40 @@ messagesFD=2 # error file descriptor by default
 
 ### Main interaction colors.
 
-if [ -t $messagesFD -a -n "$TERM" ]; then
-    # Define only if output is to a terminal (tput needs TERM).
-    errorColor="$(tput setaf 1)"
-    successColor="$(tput setaf 2)"
-    warnColor="$(tput setaf 3)"
-    stepColor="$(tput setaf 4)"
-    metaColor="$(tput setaf 5)"
-    debugColor="$(tput setaf 6)"
-    infoColor="$(tput setaf 7)"
+if [ -t $messagesFD ]; then
+    # Define only if output is to a terminal.
+    plainColor="${termPlain}"
+    highlightColor="${termBold}"
+    emphasisColor="${termBold}"
+    if [ -n "$TERM" ]; then
+        errorColor="$(tput setaf 1)"
+        successColor="$(tput setaf 2)"
+        warnColor="$(tput setaf 3)"
+        stepColor="$(tput setaf 4)"
+        metaColor="$(tput setaf 5)"
+        debugColor="$(tput setaf 6)"
+        infoColor="$(tput setaf 7)"
+    fi
 fi
 
 ### Derived interaction colors.
 
 if [ -t $messagesFD ]; then
     # Define only if output is to a terminal.
-    warnColor="${warnColor}${termBold}" # redefine as bold
-    errorColor="${errorColor}${termBold}" # redefine as bold
-    noticeColor="${infoColor}${termUnderline}"
+    warnColor="${warnColor}${highlightColor}" # redefine
+    errorColor="${errorColor}${highlightColor}" # redefine
+    noticeColor="${infoColor}${emphasisColor}"
 fi
 
 ### Main interaction labels.
 
-debugLabel="[${debugColor}Debug${termPlain}] "
-infoLabel="[${infoColor}Info${termPlain}] "
-noticeLabel="[${noticeColor}Notice${termPlain}] "
-warningLabel="[${warnColor}Warn${termPlain}] "
-errorLabel="[${errorColor}Error${termPlain}] "
-stepLabel="[${stepColor}Step${termPlain}] "
-successLabel="[${successColor}OK${termPlain}] "
+debugLabel="[${debugColor}Debug${plainColor}] "
+infoLabel="[${infoColor}Info${plainColor}] "
+noticeLabel="[${noticeColor}Notice${plainColor}] "
+warningLabel="[${warnColor}Warn${plainColor}] "
+errorLabel="[${errorColor}Error${plainColor}] "
+stepLabel="[${stepColor}Step${plainColor}] "
+successLabel="[${successColor}OK${plainColor}] "
 
 ### Interaction messages.
 
@@ -55,7 +60,7 @@ function generic-message {
             (l) label="$label$OPTARG";;
             (p) prompt="$OPTARG";;
             (e) exitCode="$OPTARG";;
-            (b) attrs="$attrs$termBold";;
+            (b) attrs="$attrs$highlightColor";;
             (c) continue=true;;
             (\?) unknown-option "$OPTARG";;
             (:)
@@ -145,6 +150,6 @@ function show-sample-messages {
     notice-message "This is a notice message."
     warning-message -c "This is a warning message."
     error-message -c "This is an error message."
-    step-message -c "This is an step message."
+    step-message -c "This is a step message."
     success-message "This is a success message."
 }
