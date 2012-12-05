@@ -31,11 +31,15 @@ function provide-module {
     [ -z "${!scriptId}" ] && declare -rg "$scriptId"="$modulesHome/$module.sh"
 }
 
-function require-module {
+function load-module {
     local module="$1"; shift
     required-arg module "module name"
     remaining-args "$@"
     source "$modulesHome/$module.sh"
+}
+
+function require-module {
+    load-module "$@" # require-module is an alias for load-module
 }
 
 provide-module # declare this module as provided

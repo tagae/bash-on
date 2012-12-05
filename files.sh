@@ -5,31 +5,9 @@
 source "$(dirname "${BASH_SOURCE[0]}")/modules.sh"
 provide-module || return
 require-module interaction
+load-module $(uname)/files
 
 ### File names.
-
-function absolute-dirname {
-    local dirname=$(dirname "$1"); shift
-    required-arg dirname "directory name"
-    remaining-args "$@"
-    if pushd "$dirname" > /dev/null 2>&1; then
-        pwd
-        popd > /dev/null
-    else
-        echo "$dirname"
-    fi
-}
-
-# absolute-filename <filename>
-#
-# Prints the absolute name of <filename>.
-#
-function absolute-filename {
-    local filename="$1"; shift
-    required-arg filename "file name"
-    remaining-args "$@"
-    echo "$(absolute-dirname "$filename")/$(basename "$filename")"
-}
 
 # relative-filename [-c] [-b <base>] <filename>
 #
