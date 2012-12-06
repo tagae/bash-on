@@ -26,20 +26,17 @@ fi
 function provide-module {
     local module="${1:-$(basename ${BASH_SOURCE[1]} .sh)}"; shift
     remaining-args "$@"
-    local scriptId=${module}_module
+    local scriptId=_${module}_module
+    scriptId=${scriptId//[^[:alnum:]_]/_} # make valid variable name
     # Return true if not loaded.
     [ -z "${!scriptId}" ] && declare -rg "$scriptId"="$modulesHome/$module.sh"
 }
 
-function load-module {
+function require-module {
     local module="$1"; shift
     required-arg module "module name"
     remaining-args "$@"
     source "$modulesHome/$module.sh"
-}
-
-function require-module {
-    load-module "$@" # require-module is an alias for load-module
 }
 
 provide-module # declare this module as provided

@@ -5,6 +5,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/modules.sh"
 provide-module || return
 require-module interaction
+require-module $(uname)/scripting
 
 ### Scripting interaction.
 
@@ -43,14 +44,15 @@ function scripting-error-message {
 # Issue an error if the given variable name is empty in the current
 # environment.
 #
-# The error message will report the given variable name, unless an
-# explicit <description> is given.
+# Unless an explicit <description> is given, the error message will
+# report the given variable name split into different words according
+# to CamelCase separation.
 #
 function required-arg {
     # Process arguments.
     # These local variable names must not exist in the caller's environment.
     local __argument="$1"; shift
-    local __description="${1:-$__argument}"; shift
+    local __description="${1:-$(_readable-arg-name "$__argument")}"; shift
     remaining-args "$@"
     # Core functionality.
     if [ -n "$__argument" ]; then

@@ -31,13 +31,14 @@ indicated previously, use
 
     source "$(dirname "$0")/lib/modules.sh"
 
-The library loads the following modules as part of its core
-functionality, which therefore need not be loaded explicitly:
+You can then load the modules you need with `require-module`, for
+example
 
-* colors
-* interaction
-* scripting
-* modules
+    require-module files
+
+If you need just one module, you can load it directly:
+
+    source "$(dirname "$0")/lib/files.sh"
 
 ### Tips
 
