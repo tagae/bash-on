@@ -63,6 +63,10 @@ function required-arg {
     fi
 }
 
+function required-args {
+    for arg in "$@"; do required-arg $arg; done
+}
+
 function remaining-args {
     test $# -gt 0 && \
         IFS=, scripting-error-message -t 1 "Unused arguments: $*"
