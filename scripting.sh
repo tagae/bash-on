@@ -11,30 +11,21 @@ require-module $(uname)/scripting
 
 scriptingColor="$(tput setaf 5)"
 scriptingLabel="[${scriptingColor}Scripting${termPlain}] "
+declare -i scriptingTraceLevel=0
 
 function scripting-error-message {
-    # Process options.
-    local -i frame=1
-    OPTIND=1
-    while getopts :t: opt; do
-        case $opt in
-            (t) frame=$(($frame + $OPTARG));;
-            (\?) unknown-option;;
-            (:) missing-option-argument;;
-        esac
-    done
-    shift $(($OPTIND-1))
     # Retrieve caller information.
-    local callerLine callerFunc callerFile callerInfo
-    read callerLine callerFunc callerFile <<< $(caller "$frame")
+    local _ traceInfo calledFunc callerLine callerFile
+    read _ calledFunc _ <<<$(caller $scriptingTraceLevel)
+    read callerLine _ callerFile <<<$(caller $(($scriptingTraceLevel+1)))
     if [ -n "$callerFile" ]; then
-        callerInfo="$callerFile"
-        test -n "$callerLine" && callerInfo="$callerInfo line $callerLine"
-        callerInfo="$callerInfo: "
+        traceInfo="$callerFile"
+        test -n "$callerLine" && traceInfo="$traceInfo line $callerLine"
+        traceInfo="$traceInfo: "
     fi
-    test -n "$callerFunc" && callerInfo="$callerInfo$callerFunc: "
+    test -n "$calledFunc" && traceInfo="$traceInfo$calledFunc: "
     # Core functionality.
-    error-message -l "$scriptingLabel$callerInfo" -e 1 "$@"
+    error-message -l "$scriptingLabel$traceInfo" -e 1 "$@"
 }
 
 ### Scripting utilities.
@@ -57,14 +48,16 @@ function required-arg {
     # Core functionality.
     if [ -n "$__argument" ]; then
         test -n "${!__argument}" || \
-            scripting-error-message -t 1 "Missing $__description"
+            scriptingTraceLevel=$(($scriptingTraceLevel+1)) scripting-error-message "Missing $__description"
     else
         required-arg argument # how meta :-P
     fi
 }
 
 function required-args {
-    for arg in "$@"; do required-arg $arg; done
+    for arg in "$@"; do
+        scriptingTraceLevel=$(($scriptingTraceLevel+1)) required-arg $arg
+    done
 }
 
 function remaining-args {
