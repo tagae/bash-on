@@ -4,6 +4,11 @@
 # module management code itself. This is a bootstrapping measure.
 [[ $(type -t require-module) =~ ^function$ ]] && return
 
+if ((BASH_VERSINFO[0] < 4)); then
+    echo "Error: Bash 4+ required." >&2
+    exit 1
+fi
+
 ### Scripting.
 
 function remaining-args {

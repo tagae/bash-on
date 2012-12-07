@@ -62,7 +62,7 @@ function required-args {
 
 function remaining-args {
     test $# -gt 0 && \
-        IFS=, scripting-error-message -t 1 "Unused arguments: $*"
+        IFS=, scriptingTraceLevel=$(($scriptingTraceLevel+1)) scripting-error-message "Unused arguments: $*"
 }
 
 function unknown-option {
@@ -71,7 +71,7 @@ function unknown-option {
     required-arg option "option name"
     remaining-args "$@"
     # Core functionality.
-    scripting-error-message -t 1 "Unknown option: -$option"
+    scriptingTraceLevel=$(($scriptingTraceLevel+1)) scripting-error-message "Unknown option: -$option"
 }
 
 function missing-option-argument {
@@ -80,5 +80,5 @@ function missing-option-argument {
     required-arg option "option name"
     remaining-args "$@"
     # Core functionality.
-    scripting-error-message -t 1 "Option -$option: missing argument"
+    scriptingTraceLevel=$(($scriptingTraceLevel+1)) scripting-error-message "Option -$option: missing argument"
 }

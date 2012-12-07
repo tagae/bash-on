@@ -8,10 +8,11 @@
 source "$(dirname "${BASH_SOURCE[0]}")/modules.sh"
 provide-module || return
 require-module colors
+require-module arrays
 
 ### Configuration.
 
-messagesFD=2 # error file descriptor by default
+declare -ig messagesFD=2 # error file descriptor by default
 
 ### Main interaction colors.
 
@@ -50,6 +51,34 @@ errorLabel="[${errorColor}Error${plainColor}] "
 stepLabel="[${stepColor}Step${plainColor}] "
 successLabel="[${successColor}OK${plainColor}] "
 
+### Message levels.
+
+declare -Ag messageLevel
+messageLevel[interact]=0
+messageLevel[error]=1
+messageLevel[warning]=2
+messageLevel[notice]=3
+messageLevel[info]=4
+messageLevel[debug]=5
+
+declare -ag maxMessageLevel
+
+function push-message-level {
+    local level="$1"; shift
+    required-arg level
+    remaining-args "$@"
+    array-push maxMessageLevel ${messageLevel[$level]}
+}
+
+function restore-message-level {
+    local _
+    array-pop maxMessageLevel _
+}
+
+push-message-level info # default level
+
+declare -ig currentMessageLevel=${maxMessageLevel[0]}
+
 ### Interaction messages.
 
 function generic-message {
@@ -74,47 +103,67 @@ function generic-message {
         esac
     done
     shift $(($OPTIND-1))
-    while test $# -gt 0; do
-        echo "${label}${attrs}$1" >&$messagesFD
-        shift
-    done
-    if $continue; then
-        true
-    else
-        if [ -n "$prompt" ]; then
-            yesno-message "${label}${prompt} (y/n) " || {
-                test "$exitCode" && exit $exitCode
-            }
-        else
-            test "$exitCode" && exit $exitCode
+    # User input (-p) forces output irrespective of current message level.
+    if [ -n "$prompt" -o $currentMessageLevel -le ${maxMessageLevel[0]} ]; then
+        while test $# -gt 0; do
+            echo "${label}${attrs}$1" >&$messagesFD
+            shift
+        done
+        if $continue; then
             true
+        else
+            if [ -n "$prompt" ]; then
+                yesno-message "${label}${prompt} (y/n) " || {
+                    test "$exitCode" && exit $exitCode
+                }
+            else
+                test "$exitCode" && exit $exitCode
+                true
+            fi
         fi
+    else
+        false
     fi
 }
 
+function yesno-message {
+    local prompt="$1"; shift
+    required-arg prompt
+    remaining-args "$@"
+    local answer
+    while [[ ! "$answer" =~ ^(y|yes|n|no)$ ]]; do
+        [ -n "$answer" ] && warning-message -c "Valid answers are: yes y no n"
+        read -p "$prompt" answer
+        answer=$(tr '[:upper:]' '[:lower:]' <<<"$answer")
+    done
+    [[ "$answer" =~ ^(y|yes)$ ]]
+}
+
 function debug-message {
-    generic-message -l "${debugLabel}" "$@"
+    currentMessageLevel=${messageLevel[debug]} generic-message -l "${debugLabel}" "$@"
 }
 
 function info-message {
-    generic-message -l "${infoLabel}" "$@"
+    currentMessageLevel=${messageLevel[info]} generic-message -l "${infoLabel}" "$@"
 }
 
 function notice-message {
-    generic-message -l "${noticeLabel}" "$@"
+    currentMessageLevel=${messageLevel[notice]} generic-message -l "${noticeLabel}" "$@"
 }
 
 function warning-message {
-    generic-message -l "${warningLabel}" -p "Continue?" -e 1 "$@"
+    currentMessageLevel=${messageLevel[warning]} generic-message -l "${warningLabel}" -p "Continue?" -e 1 "$@"
 }
 
 function error-message {
-    generic-message -l "${errorLabel}" -e 1 "$@"
+    currentMessageLevel=${messageLevel[error]} generic-message -l "${errorLabel}" -e 1 "$@"
 }
 
 function success-message {
-    generic-message -l "${successLabel}" "$@"
+    currentMessageLevel=${messageLevel[info]} generic-message -l "${successLabel}" "$@"
 }
+
+### Steps.
 
 function step-message {
     generic-message -l "${stepLabel}" -p "Proceed?" "$@"
@@ -127,17 +176,6 @@ function informed-step {
     remaining-args "$@"
     { if $interactiveSteps; then step-message "$message"; else true; fi } && \
         "$@" && { $interactiveSteps || success-message "$message"; }
-}
-
-function yesno-message {
-    local answer prompt="$1"; shift
-    remaining-args "$@"
-    while [[ ! "$answer" =~ ^(y|yes|n|no)$ ]]; do
-        [ -n "$answer" ] && warning "Valid answers are: yes y no n"
-        read -p "$prompt" answer
-        answer=$(tr '[:upper:]' '[:lower:]' <<<"$answer")
-    done
-    [[ "$answer" =~ ^(y|yes)$ ]]
 }
 
 ### Testing.
