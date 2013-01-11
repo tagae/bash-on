@@ -7,11 +7,21 @@ provide-module || return
 require-module interaction
 require-module $(uname)/scripting
 
-### Scripting interaction.
+### Scripting colors.
 
-scriptingColor="$(tput setaf 5)"
+if [ -n "$TERM" ]; then
+    scriptingColor="$(tput setaf 5)"
+fi
+
+### Scripting labels.
+
 scriptingLabel="[${scriptingColor}Scripting${termPlain}] "
+
+### Scripting variables.
+
 declare -i scriptingTraceLevel=0
+
+### Scripting messages.
 
 function scripting-error-message {
     # Retrieve caller information.
