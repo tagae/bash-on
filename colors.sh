@@ -10,7 +10,7 @@ provide-module || return
 
 ### Display modifiers.
 
-if [ -n "$TERM" ]; then
+if [ -t 1 -o -t 2 ]; then
     termUnderline=$(tput sgr 0 1)
     termBold=$(tput bold)
     termStrong=$(tput smso)

@@ -16,30 +16,26 @@ declare -ig messagesFD=2 # error file descriptor by default
 
 ### Main interaction colors.
 
+plainColor="${termPlain}"
+highlightColor="${termBold}"
+emphasisColor="${termBold}"
+
 if [ -t $messagesFD ]; then
     # Define only if output is to a terminal.
-    plainColor="${termPlain}"
-    highlightColor="${termBold}"
-    emphasisColor="${termBold}"
-    if [ -n "$TERM" ]; then
-        errorColor="$(tput setaf 1)"
-        successColor="$(tput setaf 2)"
-        warnColor="$(tput setaf 3)"
-        stepColor="$(tput setaf 4)"
-        metaColor="$(tput setaf 5)"
-        debugColor="$(tput setaf 6)"
-        infoColor="$(tput setaf 7)"
-    fi
+    errorColor="$(tput setaf 1)"
+    successColor="$(tput setaf 2)"
+    warnColor="$(tput setaf 3)"
+    stepColor="$(tput setaf 4)"
+    metaColor="$(tput setaf 5)"
+    debugColor="$(tput setaf 6)"
+    infoColor="$(tput setaf 7)"
 fi
 
 ### Derived interaction colors.
 
-if [ -t $messagesFD ]; then
-    # Define only if output is to a terminal.
-    warnColor="${warnColor}${highlightColor}" # redefine
-    errorColor="${errorColor}${highlightColor}" # redefine
-    noticeColor="${infoColor}${emphasisColor}"
-fi
+warnColor="${warnColor}${highlightColor}" # redefine
+errorColor="${errorColor}${highlightColor}" # redefine
+noticeColor="${infoColor}${emphasisColor}"
 
 ### Main interaction labels.
 

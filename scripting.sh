@@ -9,7 +9,7 @@ require-module $(uname)/scripting
 
 ### Scripting colors.
 
-if [ -n "$TERM" ]; then
+if [ -t $messagesFD ]; then
     scriptingColor="$(tput setaf 5)"
 fi
 
