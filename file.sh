@@ -7,6 +7,7 @@ provide-module || return
 
 require-module runtime
 require-module usage
+require-module text
 
 require-module $(uname)/files
 
@@ -70,6 +71,35 @@ function relative-filename {
     fi
 }
 
+### File properties.
+
+# file-size <name>
+#
+# Echoes the size of the file with the given <name>.
+#
+function file-size {
+    eval "$(preamble)"
+    -file-size "$name"
+}
+
+# require-file [-v] <name>
+#
+# Checks whether a file exists.
+#
+# -v: Interpret <name> as a variable name.
+#
+function require-file {
+    echo "${commandPreamble[require-file]}"
+    eval "$(preamble)"
+    if [ "${options[v]+given}" ]; then
+        [ -e "${!name}" ] || error-message \
+            "Missing $(split-camelcase "$name") file"
+    else
+        [ -e "${name}" ] || error-message "Missing file: $name"
+    fi
+}
+
+
 ### Temporary files.
 
 # temp-file [-c] [-p <prefix>] [-v <var>]
@@ -113,26 +143,29 @@ function temp-file {
     fi
 }
 
-### Commands.
+### File operations.
 
-function command-available {
-    # Process options.
-    local command="$1"; shift
-    required-arg command
-    remaining-args "$@"
-    which "$command" > /dev/null
+# wipe-file <target>
+#
+# Zeroes and removes the file with the given name.
+#
+function wipe-file {
+    eval "$(preamble)"
+    if [ -e "$target" ]; then
+        local log="$(mktemp -t "dd-log")"
+        for (( i=0; i < 5; i++ )); do
+            dd if=/dev/zero of="$target" \
+                count=1 bs=$(file-size "$target") 2>"${log:-&2}"
+            if [ $? -ne 0 ]; then
+                warning-message "Failed to zero $target${log:+:$'\n'$(cat "$log")}"
+                break
+            fi
+        done
+        rm -f "$target" "$log"
+    fi
 }
 
-function ensure-dir {
-    local directory="$1"; shift
-    required-arg directory
-    remaining-args "$@"
-    test -d "$directory" || mkdir -p "$directory"
-}
-
-### Informed actions.
-
-function informed-symlink {
+function files-symlink {
     local source="$1"; shift
     local target="$1"; shift
     required-arg source
@@ -142,6 +175,13 @@ function informed-symlink {
     informed-step "Symlink $1 to $2${3:+ in $3}" ln -s "$1" "$2"
 }
 
-function informed-remove {
+function files-remove {
     informed-step "Remove symlink $1" rm "$1"
+}
+
+function ensure-dir {
+    local directory="$1"; shift
+    required-arg directory
+    remaining-args "$@"
+    test -d "$directory" || mkdir -p "$directory"
 }

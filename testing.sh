@@ -5,7 +5,8 @@
 source "$(dirname "${BASH_SOURCE[0]}")/modules.sh"
 provide-module || return
 
-require-module files
+require-module file
+require-module text
 
 ### Testing colors.
 
@@ -31,16 +32,19 @@ function testing-progress {
 
 ### Testing results.
 
-temp-file -v testingResults
 temp-file -v testingActualOutput
 temp-file -v testingExpectedOutput
+temp-file -v testingMessages
+temp-file -v testingCounters
+
+declare -gi testingSuccessCount=0 testingFailureCount=0
 
 # testing-success
 #
 function testing-success {
     unused-arguments "$@"
     testing-progress -k "$successColor.$termPlain"
-    printf "testing-success-report\n" >> "$testingResults"
+    echo '(( testingSuccessCount++ ))' >> "$testingCounters"
 }
 
 # testing-failure [messages...]
@@ -49,25 +53,29 @@ function testing-failure {
     testing-progress -k "$failColor.$termPlain"
     local line file
     read line _ file <<<"$(caller 1)"
+    echo "testing-source-report '$file' '$line'" >> "$testingMessages"
     while (( $# > 0 )); do
-        printf "testing-failure-report '$file' '$line' <<'END'\n%s\nEND\n" "$1" >> "$testingResults"
+        printf "testing-failure-report <<'END'\n%s\nEND\n" "$1" \
+            >> "$testingMessages"
         shift
     done
+    echo '(( testingFailureCount++ ))' >> "$testingCounters"
 }
 
-# testing-success-report
-#
-function testing-success-report {
-    unused-arguments "$@"
-}
-
-# testing-failure-report <file> <line>
+# testing-failure-report
 #
 function testing-failure-report {
+    unused-arguments "$@"
+    testing-message -l "$testFailLabel" "$(cat)"
+}
+
+# testing-source-report <file> <line>
+#
+function testing-source-report {
     local file="${1:-$(missing-argument "file")}"; shift
     local -i line="${1:-$(missing-argument "line")}"; shift
     unused-arguments "$@"
-    testing-message -l "$testFailLabel" "At line $line of $file" "$(cat)"
+    testing-message "At line $line of $file"
 }
 
 ### Testing framework.
@@ -79,7 +87,6 @@ function test-suite {
     unused-arguments "$@"
     test-suite-end
     declare -g testSuite="$name"
-    echo > "$testingResults"
     testing-message -k "$name: "
 }
 
@@ -87,15 +94,18 @@ function test-suite {
 function test-suite-end {
     unused-arguments "$@"
     [ -n "$testSuite" ] || return
-    local -i successes="$(grep testing-success-report < "$testingResults" | wc -l)"
-    local -i failures="$(grep testing-failure-report < "$testingResults" | wc -l)"
-    testing-progress " ($successes successes, $failures failures)"
-    source "$testingResults"
+    source "$testingCounters"
+    testing-progress " ($(countable-noun $testingSuccessCount success), $(countable-noun $testingFailureCount failure))"
+    source "$testingMessages"
     debug-message "Finished suite: $testSuite"
     unset testSuite
+    echo > "$testingCounters"
+    echo > "$testingMessages"
+    testingSuccessCount=0
+    testingFailureCount=0
 }
 
-add-trap -p 'test-suite-end; info-message "Done testing."' EXIT
+add-trap -p 'test-suite-end' EXIT
 
 ### Testing assertions.
 

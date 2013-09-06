@@ -32,16 +32,16 @@ fi
 
 ### Derived interaction colors.
 
-warnColor="${warnColor}${highlightColor}" # redefine
-errorColor="${errorColor}${highlightColor}" # redefine
-noticeColor="${infoColor}${emphasisColor}"
+warnColor="${warnColor}" # redefine
+errorColor="${errorColor}" # redefine
+noticeColor="${infoColor}"
 
 ### Main interaction labels.
 
 debugLabel="[${debugColor}Debug${plainColor}] "
 infoLabel="[${infoColor}Info${plainColor}] "
 noticeLabel="[${noticeColor}Notice${plainColor}] "
-warningLabel="[${warnColor}Warn${plainColor}] "
+warningLabel="[${warnColor}Warning${plainColor}] "
 errorLabel="[${errorColor}Error${plainColor}] "
 stepLabel="[${stepColor}Step${plainColor}] "
 successLabel="[${successColor}OK${plainColor}] "

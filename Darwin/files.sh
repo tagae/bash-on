@@ -15,3 +15,7 @@ function -absolute-dirname {
 function -absolute-filename {
     echo "$(-absolute-dirname "$(dirname "$1")")/$(basename "$1")"
 }
+
+function -file-size {
+    stat -f %z "$1"
+}

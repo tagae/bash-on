@@ -3,11 +3,12 @@
 source "$(dirname "${BASH_SOURCE[0]}")/../modules.sh"
 
 require-module testing
-require-module files
+require-module file
 
 ### Test fixture
 
 temp-file -d -v fixtureDir
+temp-file -v testFile
 
 # a1: inexistent file
 a1parent0="$fixtureDir"
@@ -20,7 +21,7 @@ a1abs="$a1parent0/a1"
 
 ### Test suites.
 
-test-suite "File naming functions"
+test-suite "File naming"
 
 absolute-dirname "." | outputs "$PWD"
 absolute-dirname "./" | outputs "$PWD"
@@ -37,3 +38,8 @@ absolute-filename "$a1rel0" | outputs "$a1abs"
 cd .. && absolute-filename "$a1rel1" | outputs "$a1abs"
 cd .. && absolute-filename "$a1rel2" | outputs "$a1abs"
 popd > /dev/null
+
+test-suite "File attributes"
+
+echo -n "abc" > "$testFile"
+file-size "$testFile" | outputs 3

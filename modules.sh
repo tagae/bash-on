@@ -43,6 +43,9 @@ function provide-module {
 function require-module {
     local module="${1:-$(missing-argument "module")}"; shift
     unused-arguments "$@"
+    if [ ! -e "$modulesBase/$module.sh" ]; then
+        scripting-error "Module '$module' not found"
+    fi
     source "$modulesBase/$module.sh"
 }
 

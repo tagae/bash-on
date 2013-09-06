@@ -10,3 +10,7 @@ function -absolute-dirname {
 function -absolute-filename {
     readlink -m "$1"
 }
+
+function -file-size {
+    stat -c %s "$1"
+}

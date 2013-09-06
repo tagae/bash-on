@@ -9,14 +9,15 @@ Support
 The library uses features introduced in Bash 4, and therefore does not
 work with older versions of Bash.
 
-Since the library has been conceived for Bash, the shebang of your
-script has to be `#!/bin/bash` rather than the more generic
-`#!/bin/sh`.
+If you install Bash 4+ in your system, you can bring it forward in
+your `PATH` and use `#!/usr/bin/env bash` as shebang. Mind that such
+invocation may bring security problems if an attacker were able to
+manipulate your `PATH`. Otherwise just hard-code the desired path in
+the shebang.
 
-For multiple installed versions of Bash, you can bring forward the one
-you need by setting the current `PATH` appropriately, and using as
-shebang `#!/usr/bin/env bash`. Mind that such invocation may bring
-security problems, if an attacker were able to manipulate your `PATH`.
+Further note that the shebang of your script has to request `bash`
+instead of the more generic (and limited) `sh`.
+
 
 Installation
 ------------

@@ -25,7 +25,7 @@ declare -g scriptingLabel="[${scriptingColor}Scripting${termPlain}] "
 function scripting-error {
     (( scriptingMetaLevel++ ))
     # Process options.
-    local -i delta=1
+    local -i delta=0
     OPTIND=1
     while getopts :d: opt; do
         case $opt in
@@ -41,7 +41,7 @@ function scripting-error {
     read callerLine _ callerFile <<<$(caller $(($scriptingMetaLevel+$delta)))
     if [ -n "$callerFile" ]; then
         traceInfo="$callerFile"
-        [ -n "$callerLine" ] && traceInfo="$traceInfo line $callerLine"
+        [ -n "$callerLine" ] && traceInfo="$traceInfo (line $callerLine)"
         traceInfo="$traceInfo: "
     fi
     [ -n "$calledFunc" ] && \

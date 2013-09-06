@@ -78,6 +78,32 @@ function ordinal {
     error-message "Ordinals above 100 not implemented yet"
 }
 
+### Language.
+
+# countable-noun [-o] <number> <noun>
+#
+# Outputs <noun> in singular if <number> is 1, or plural otherwise.
+#
+# -o: Omit the number (print the noun only).
+#
+function countable-noun {
+    eval "$(preamble)"
+    [ "${options[o]-absent}" ] && echo -n "$number "
+    if (( number == 1 )); then
+        echo -n "$noun"
+    else
+        case "$noun" in
+            thesis) echo -n "theses";;
+            *)
+                echo -n "$noun"
+                case "${noun: -1}" in
+                    s) echo -n "es";;
+                    *) echo -n "s";;
+                esac;;
+        esac
+    fi
+}
+
 ### String utilities.
 
 function trim {

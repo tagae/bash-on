@@ -171,9 +171,22 @@ function signature-end {
         optionCode+='while getopts :'"$optstring"' opt; do '
         optionCode+='case $opt in '
         optionCode+='(\?) unknown-option;;'
-        optionCode+='(:) options[$OPTARG]="${defaults[$OPTARG]-missing-option-argument}";;'
+        if [ "${optionValueCode:+nonempty}" ]; then
+            optionCode+='(:) options[$OPTARG]="${defaults[$OPTARG]-$(missing-option-argument)}";;'
+        else
+            optionCode+='(:) missing-option-argument;;'
+        fi
         optionCode+='(*) options[$opt]="$OPTARG";;'
         optionCode+='esac;'
+        if [[ $optstring =~ : ]]; then
+            optionCode+='case $opt in '
+            for name in ${!signatureOptions[*]}; do
+                if [ "${signatureOptions[$name]:+defined}" ]; then
+                    optionCode+='('"$name"') local '"$(make-varname ${signatureOptions[$name]})"'="${options[$opt]}";;'
+                fi
+            done
+            optionCode+='esac;'
+        fi
         optionCode+='done;'
         optionCode+='shift $((OPTIND-1));'
     fi
