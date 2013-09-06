@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+
+thisFile="${BASH_SOURCE[0]}"
+source "$(dirname "$thisFile")/../modules.sh"
+
+require-module testing
+require-module usage
+
+### Test fixture
+
+#a1
+function a1 { return; }
+
+# a2
+function a2 { return; }
+
+  # a3
+function a3 { return; }
+
+#
+  # a4
+ #
+#
+function a4 { return; }
+
+# this is a comment about function
+# a5
+function a5 { return; }
+
+# a6
+function a6() { return; }
+  #
+#  a7
+ #
+# Purpose.
+   #
+function a7 {
+    return
+} # a8
+function a8 { return; }
+
+# a9
+function a9 { eval "$(preamble)"; }
+
+# b1 <arg >
+function b1 { eval "$(preamble)"; echo "$arg"; }
+
+# c1 [ arg ]
+function c1 { eval "$(preamble)"; echo "${arg-absent}"; }
+
+# c2 [ arg =4]
+function c2 { eval "$(preamble)"; echo "${arg-absent}"; }
+
+# c3 [ arg =]
+function c3 { eval "$(preamble)"; echo "${arg-absent}"; }
+
+# c4 [ arg = with"quo]
+function c4 { eval "$(preamble)"; echo "${arg-absent}"; }
+
+# d1 [-a]
+function d1 {
+    eval "$(preamble)"
+    echo "${options[a]-absent}${options[a]+present}"
+}
+
+# d2[ -a < arg > ]
+function d2 { eval "$(preamble)"; echo "${options[a]-absent}"; }
+
+# d3 [ -a [ arg ] ]
+function d3 { eval "$(preamble)"; echo "${options[a]-absent}"; }
+
+# d4 [ -a [ arg =4 ] ]
+function d4 { eval "$(preamble)"; echo "${options[a]-absent}"; }
+
+# d5 [ -a [ arg =] ]
+function d5 { eval "$(preamble)"; echo "${options[a]-absent}"; }
+
+# d6 [ -a [ arg = with"quo] ]
+function d6 { eval "$(preamble)"; echo "${options[a]-absent}"; }
+
+# e1 [ args ... ]
+function e1 { eval "$(preamble)"; echo ${args[*]}; }
+
+# e2 <a> [ b ... ]
+function e2 { eval "$(preamble)"; echo $a, ${b[*]}; }
+
+# f1
+#
+# Command with purpose.
+#
+function f1 { return; }
+
+# f2
+#
+# Command with purpose.
+#
+#
+#
+# And additional comments.
+#   -item1
+#     -item2
+#
+function f2 { return; }
+
+### Test suites.
+
+test-suite "Comment signatures"
+
+comment-signature "a1" | outputs -s "a1
+"
+comment-signature "a2" | outputs -s " a2
+"
+comment-signature "a3" | outputs -s " a3
+"
+comment-signature "a4" | outputs -s "
+ a4
+
+
+"
+comment-signature "a5" | outputs -s ""
+comment-signature "a6" | outputs -s " a6
+"
+comment-signature "a7" | outputs -s "
+  a7
+
+ Purpose.
+
+"
+comment-signature "c1" | outputs -s " c1 [ arg ]
+"
+comment-signature "a8" | outputs -s " a8
+"
+comment-signature "d1" | outputs -s " d1 [-a]
+"
+comment-signature "d2" | outputs -s " d2[ -a < arg > ]
+"
+comment-signature "e1" | outputs -s " e1 [ args ... ]
+"
+
+test-suite "Commands without arguments"
+
+a9 | outputs ""
+
+test-suite "Commands with arguments"
+
+b1 "given" | outputs "given"
+
+test-suite "Commands with optional arguments"
+
+c1 | outputs "absent"
+c1 "" | outputs ""
+c1 "42" | outputs "42"
+
+c2 | outputs "4"
+c2 "" | outputs ""
+c2 "42" | outputs "42"
+
+c3 | outputs "absent"
+c3 "" | outputs ""
+c3 "42" | outputs "42"
+
+c4 | outputs ' with"quo'
+c4 "" | outputs ""
+c4 "42" | outputs "42"
+
+test-suite "Commands with options"
+
+d1 | outputs "absent"
+d1 -a | outputs "present"
+
+d2 -a given | outputs "given"
+
+d3 | outputs "absent"
+d3 -a | outputs ""
+d3 -a given | outputs "given"
+
+d4 | outputs "absent"
+d4 -a | outputs "4 "
+d4 -a 42 | outputs "42"
+
+d5 | outputs "absent"
+d5 -a | outputs ""
+d5 -a 69 | outputs "69"
+
+d6 | outputs "absent"
+d6 -a | outputs ' with"quo'
+d6 -a 1984 | outputs "1984"
+
+test-suite "Commands with tail arguments"
+
+e1 a b c | outputs "a b c"
+
+e2 a b c d | outputs "a, b c d"
+
+test-suite "Commands with documented purpose"
+
+command-purpose f1 | outputs " Command with purpose."
+
+command-purpose a7 | outputs " Purpose."
+
+command-description f2 | outputs -s " And additional comments.
+   -item1
+     -item2
+"

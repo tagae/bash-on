@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+thisFile="${BASH_SOURCE[0]}"
+source "$(dirname "$thisFile")/../modules.sh"
+
+require-module testing
+require-module files
+
+### Test fixture
+
+declare -g testDir="$(mktemp -t bash-on -d)"
+[ $? -eq 0 ] || error-message "Could not create fixture directory"
+append-trap "rm -rf '$testDir'" EXIT
+
+# a1: inexistent file
+a1parent0="$testDir"
+a1parent1="$(dirname "$a1parent0")"
+a1parent2="$(dirname "$a1parent1")"
+a1rel0="a1"
+a1rel1="$(basename "$a1parent0")/$a1rel0"
+a1rel2="$(basename "$a1parent1")/$a1rel1"
+a1abs="$a1parent0/a1"
+
+### Test suites.
+
+test-suite "File naming functions"
+
+absolute-dirname "." | test-input -a "$PWD"
+absolute-dirname "./" | test-input -a "$PWD"
+
+absolute-path "." | test-input -a "$PWD"
+absolute-path "./" | test-input -a "$PWD"
+
+relative-filename -b "$a1parent0" "$a1abs" | test-input -a "$a1rel0"
+relative-filename -b "$a1parent1" "$a1abs" | test-input -a "$a1rel1"
+relative-filename -b "$a1parent2" "$a1abs" | test-input -a "$a1rel2"
+
+pushd "$a1parent0" > /dev/null
+absolute-filename "$a1rel0" | test-input -a "$a1abs"
+cd .. && absolute-filename "$a1rel1" | test-input -a "$a1abs"
+cd .. && absolute-filename "$a1rel2" | test-input -a "$a1abs"
+popd > /dev/null
+
+test-suite "Temporary files"
+
+temp="$(temp-file)"
+#test-num-equal $? 0

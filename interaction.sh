@@ -8,7 +8,6 @@
 source "$(dirname "${BASH_SOURCE[0]}")/modules.sh"
 provide-module || return
 require-module colors
-require-module arrays
 
 ### Configuration.
 
@@ -49,60 +48,51 @@ successLabel="[${successColor}OK${plainColor}] "
 
 ### Message levels.
 
-declare -Ag messageLevel
-messageLevel[interact]=0
-messageLevel[error]=1
-messageLevel[warning]=2
-messageLevel[notice]=3
-messageLevel[info]=4
-messageLevel[debug]=5
+declare -Ag messageLevelPriority=(
+    # Extra levels can be added dynamically if needed.
+    [interact]=0
+    [error]=1
+    [warning]=2
+    [notice]=3
+    [info]=4
+    [trace]=5
+    [debug]=6
+)
 
-declare -ag maxMessageLevel
-
-function push-message-level {
-    local level="$1"; shift
-    required-arg level
-    remaining-args "$@"
-    array-push maxMessageLevel ${messageLevel[$level]}
-}
-
-function restore-message-level {
-    local _
-    array-pop maxMessageLevel _
-}
-
-push-message-level info # default level
-
-declare -ig currentMessageLevel=${maxMessageLevel[0]}
+declare -g currentMessageLevel=info maxMessageLevel=info
 
 ### Interaction messages.
 
 function generic-message {
-    local label prompt exitCode attrs continue=false
+    local label prompt attrs keepline continue=false emptylines=false
+    local -i exitCode
     OPTIND=1
-    while getopts :l:p:e:bc opt; do
+    while getopts :l:p:e:bcnk opt; do
         case $opt in
             (l) label="$label$OPTARG";;
             (p) prompt="$OPTARG";;
             (e) exitCode="$OPTARG";;
             (b) attrs="$attrs$highlightColor";;
             (c) continue=true;;
-            (\?) unknown-option "$OPTARG";;
+            (n) emptylines=true;;
+            (k) keepline="-n";;
+            (\?) unknown-option;;
             (:)
                 case $OPTARG in
                     (e)
                         exitCode=0;;
                     (*)
                         missing-option-argument;;
-                esac
-                ;;
+                esac;;
         esac
     done
     shift $(($OPTIND-1))
-    # User input (-p) forces output irrespective of current message level.
-    if [ -n "$prompt" -o $currentMessageLevel -le ${maxMessageLevel[0]} ]; then
-        while test $# -gt 0; do
-            echo "${label}${attrs}$1" >&$messagesFD
+    if [ "$exitCode" -o \
+            ${messageLevelPriority[$currentMessageLevel]} -le \
+                ${messageLevelPriority[${maxMessageLevel}]} ]; then
+        while (( $# > 0 )); do
+            { test -n "$1" || "$emptylines"; } && \
+                echo $keepline "${label}${attrs}$1" >&$messagesFD
             shift
         done
         if $continue; then
@@ -124,8 +114,6 @@ function generic-message {
 
 function yesno-message {
     local prompt="$1"; shift
-    required-arg prompt
-    remaining-args "$@"
     local answer
     while [[ ! "$answer" =~ ^(y|yes|n|no)$ ]]; do
         [ -n "$answer" ] && warning-message -c "Valid answers are: yes y no n"
@@ -136,27 +124,27 @@ function yesno-message {
 }
 
 function debug-message {
-    currentMessageLevel=${messageLevel[debug]} generic-message -l "${debugLabel}" "$@"
+    currentMessageLevel=debug generic-message -l "${debugLabel}" "$@"
 }
 
 function info-message {
-    currentMessageLevel=${messageLevel[info]} generic-message -l "${infoLabel}" "$@"
+    currentMessageLevel=info generic-message -l "${infoLabel}" "$@"
 }
 
 function notice-message {
-    currentMessageLevel=${messageLevel[notice]} generic-message -l "${noticeLabel}" "$@"
+    currentMessageLevel=notice generic-message -l "${noticeLabel}" "$@"
 }
 
 function warning-message {
-    currentMessageLevel=${messageLevel[warning]} generic-message -l "${warningLabel}" -p "Continue?" -e 1 "$@"
+    currentMessageLevel=warning generic-message -l "${warningLabel}" -p "Continue?" -e 1 "$@"
 }
 
 function error-message {
-    currentMessageLevel=${messageLevel[error]} generic-message -l "${errorLabel}" -e 1 "$@"
+    currentMessageLevel=error generic-message -l "${errorLabel}" -e 1 "$@"
 }
 
 function success-message {
-    currentMessageLevel=${messageLevel[info]} generic-message -l "${successLabel}" "$@"
+    currentMessageLevel=info generic-message -l "${successLabel}" "$@"
 }
 
 ### Steps.
@@ -169,7 +157,6 @@ interactiveSteps=false
 
 function informed-step {
     local message="$1"; shift
-    remaining-args "$@"
     { if $interactiveSteps; then step-message "$message"; else true; fi } && \
         "$@" && { $interactiveSteps || success-message "$message"; }
 }

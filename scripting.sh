@@ -4,8 +4,9 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/modules.sh"
 provide-module || return
+
 require-module interaction
-require-module $(uname)/scripting
+require-module text
 
 ### Scripting colors.
 
@@ -13,82 +14,104 @@ if [ -t $messagesFD ]; then
     scriptingColor="$(tput setaf 5)"
 fi
 
-### Scripting labels.
-
-scriptingLabel="[${scriptingColor}Scripting${termPlain}] "
-
 ### Scripting variables.
 
-declare -i scriptingTraceLevel=0
+declare -ig scriptingMetaLevel=0
 
 ### Scripting messages.
 
-function scripting-error-message {
+declare -g scriptingLabel="[${scriptingColor}Scripting${termPlain}] "
+
+function scripting-error {
+    (( scriptingMetaLevel++ ))
+    # Process options.
+    local -i delta=1
+    OPTIND=1
+    while getopts :d: opt; do
+        case $opt in
+            (d) delta="$OPTARG";;
+            (\?) ((OPTIND--)); break;; # pass on to error-message
+            (:) missing-option-argument;;
+        esac
+    done
+    shift $((OPTIND-1))
     # Retrieve caller information.
     local _ traceInfo calledFunc callerLine callerFile
-    read _ calledFunc _ <<<$(caller $scriptingTraceLevel)
-    read callerLine _ callerFile <<<$(caller $(($scriptingTraceLevel+1)))
+    read _ calledFunc _ <<<$(caller $scriptingMetaLevel)
+    read callerLine _ callerFile <<<$(caller $(($scriptingMetaLevel+$delta)))
     if [ -n "$callerFile" ]; then
         traceInfo="$callerFile"
-        test -n "$callerLine" && traceInfo="$traceInfo line $callerLine"
+        [ -n "$callerLine" ] && traceInfo="$traceInfo line $callerLine"
         traceInfo="$traceInfo: "
     fi
-    test -n "$calledFunc" && traceInfo="$traceInfo$calledFunc: "
+    [ -n "$calledFunc" ] && \
+        [ "$calledFunc" != "main" ] && \
+            traceInfo="$traceInfo$calledFunc: "
     # Core functionality.
     error-message -l "$scriptingLabel$traceInfo" -e 1 "$@"
+    (( scriptingMetaLevel-- ))
 }
 
-### Scripting utilities.
+### Argument handling.
 
-# required-arg <variable> [<description>]
+# unused-arguments [arguments...]
 #
-# Issue an error if the given variable name is empty in the current
-# environment.
+# Raises an error if unprocessed arguments remain.
 #
-# Unless an explicit <description> is given, the error message will
-# report the given variable name split into different words according
-# to CamelCase separation.
+function unused-arguments {
+    (( scriptingMetaLevel++ ))
+    (( $# == 0 )) || scripting-error "Unexpected argument${2+s}: $*"
+    (( scriptingMetaLevel-- ))
+}
+
+# missing-argument <description>
 #
-function required-arg {
-    # Process arguments.
-    # These local variable names must not exist in the caller's environment.
-    local __argument="$1"; shift
-    local __description="${1:-$(_readable-arg-name "$__argument")}"; shift
-    remaining-args "$@"
-    # Core functionality.
-    if [ -n "$__argument" ]; then
-        test -n "${!__argument}" || \
-            scriptingTraceLevel=$(($scriptingTraceLevel+1)) scripting-error-message "Missing $__description"
-    else
-        required-arg argument # how meta :-P
-    fi
+# Rasies an error due to a missing argument.
+#
+function missing-argument {
+    (( scriptingMetaLevel++ ))
+    local description="$1"; shift
+    unused-arguments "$@"
+    scripting-error "Missing $description"
+    (( scriptingMetaLevel-- ))
 }
 
-function required-args {
-    for arg in "$@"; do
-        scriptingTraceLevel=$(($scriptingTraceLevel+1)) required-arg $arg
-    done
-}
+# Define projector functions that simply echo their nth argument.
+for ((i = 0; i < 10; i++ )); do
+    eval "function $(ordinal $i)-argument { printf '%s' \"\$$i\"; }"
+done
 
-function remaining-args {
-    test $# -gt 0 && \
-        IFS=, scriptingTraceLevel=$(($scriptingTraceLevel+1)) scripting-error-message "Unused arguments: $*"
-}
+### Option handling.
 
+declare -gA options
+
+# unknown-option [option name]
+#
+# Reports an unknown command option.
+#
 function unknown-option {
-    # Process arguments.
-    local option="${1:-$OPTARG}"; shift
-    required-arg option "option name"
-    remaining-args "$@"
-    # Core functionality.
-    scriptingTraceLevel=$(($scriptingTraceLevel+1)) scripting-error-message "Unknown option: -$option"
+    (( scriptingMetaLevel++ ))
+    local optionName="${1:-$OPTARG}"; shift
+    unused-arguments "$@"
+    scripting-error "Unknown option -$optionName"
+    (( scriptingMetaLevel-- ))
 }
 
+# missing-option-argument [option name]
+#
+# Reports a missing argument for a command option.
+#
 function missing-option-argument {
-    # Process arguments.
-    local option="${1:-$OPTARG}"; shift
-    required-arg option "option name"
-    remaining-args "$@"
-    # Core functionality.
-    scriptingTraceLevel=$(($scriptingTraceLevel+1)) scripting-error-message "Option -$option: missing argument"
+    (( scriptingMetaLevel++ ))
+    local optionName="${1:-$OPTARG}"; shift
+    unused-arguments "$@"
+    scripting-error "Missing argument for option -$optionName"
+    (( scriptingMetaLevel-- ))
+}
+
+### Meta.
+
+function make-varname {
+    local first="$1"; shift
+    echo "$first$(camelcase-join "$@")"
 }

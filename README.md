@@ -1,9 +1,14 @@
 Bash On
 =======
 
-Yet another script to write today? No worries, bash on!
+Yet another script to write today? No worries, just bash on!
 
 Bash On is a modular Bash library to help you write robust scripts.
+
+Licence
+-------
+
+Bash On is distributed under the terms of GPLv3.
 
 Support
 -------
@@ -68,4 +73,5 @@ To use `readlink` portably across GNU and BSD, do
 
     source "$(dirname "$(readlink "$0" || echo "$0")")/lib/modules.sh"
 
-This mechanism will resolve at most one level of symlink indirection.
+This mechanism will resolve at most one level of symlink indirection,
+which is sufficient in most cases.

@@ -4,23 +4,43 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/modules.sh"
 provide-module || return
-require-module interaction
+
+require-module runtime
+require-module usage
+
 require-module $(uname)/files
 
 ### File names.
 
+# absolute-dirname <name>
+#
+# Returns the absolute path of the given directory <name>.
+#
 function absolute-dirname {
-    local directoryName=$(dirname "$1"); shift
-    required-arg directoryName
-    remaining-args "$@"
-    _absolute-dirname "$directoryName"
+    eval "$(preamble)"
+    _absolute-dirname "$name"
 }
 
+# absolute-filename <name>
+#
+# Returns the absolute path of the given file <name>.
+#
 function absolute-filename {
-    local fileName="$1"; shift
-    required-arg fileName
-    remaining-args "$@"
-    _absolute-filename "$fileName"
+    eval "$(preamble)"
+    _absolute-filename "$name"
+}
+
+# absolute-path <path>
+#
+# Converts the given relative <path> into absolute.
+#
+function absolute-path {
+    eval "$(preamble)"
+    if  [ -d "$path" ]; then
+        _absolute-dirname "$path"
+    elif [ -e "$path" ]; then
+        _absolute-filename "$path"
+    fi
 }
 
 # relative-filename [-c] [-b <base>] <filename>
@@ -36,32 +56,58 @@ function absolute-filename {
 # (rather than exiting).
 #
 function relative-filename {
-    # Process options.
-    local base="$PWD" fail=true
-    OPTIND=1
-    while getopts :b:c opt; do
-        case $opt in
-            (b) base="$OPTARG";;
-            (c) fail=false;;
-            (\?) unknown-option;;
-            (:) missing-option-argument;;
-        esac
-    done
-    shift $(($OPTIND-1))
-    # Process arguments.
-    local filename="$1"; shift
-    required-arg filename "file name"
-    remaining-args "$@"
-    # Relativise filename.
+    eval "$(preamble)"
+    local base="${options[b]-$PWD}"
     if [[ $(absolute-filename "$filename") =~ ^$base/(.+) ]]; then
         echo "${BASH_REMATCH[1]}"
     else
-        if $fail; then
+        if [ "${options[c]-absent}" ]; then
             error-message "$filename does not reside in $base."
         else
             echo "$filename"
             return false
         fi
+    fi
+}
+
+### Temporary files.
+
+# temp-file [-c] [-p <prefix>] [-v <var>]
+#
+# Creates a temporary file and prints its file name.
+# The file will be automatically deleted upon shell exit.
+#
+# -p: Use <prefix> instead of the default 'generic'.
+# -c: Do not exit upon failure to create the file.
+# -v: Assign to global variable <var> instead of printing.
+#
+function temp-file {
+    # This function should not use the $(preamble) mechanism, because
+    # it is used to test the 'usage' module itself.
+    OPTIND=1
+    while getopts :cp:v: opt; do
+        case $opt in
+            (c) local continue="$OPTARG";;
+            (p) local prefix="$OPTARG";;
+            (v) local var="$OPTARG";;
+            (\?) unknown-option;;
+            (:) missing-option-argument;;
+        esac
+    done
+    shift $(($OPTIND-1))
+    unused-arguments "$@"
+    local file="$(mktemp -t "${prefix-$(split-camelcase -s - "${var-tempFile}")}")"
+    if [ $? -eq 0 ]; then
+        add-trap "rm '$file'" EXIT
+        if [ "${var+given}" ]; then
+            eval "declare -g $var='$file'"
+        else
+            echo "$file"
+        fi
+    elif [ "${continue-absent}" ]; then
+        error-message "Could not create temporary file"
+    else
+        return $?
     fi
 }
 

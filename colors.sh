@@ -20,11 +20,11 @@ fi
 # See http://linuxtidbits.wordpress.com/2008/08/11/output-color-on-bash-scripts/
 
 function show-term-colors {
+    echo "\$term...         Plain  Bold   Underline"
     for i in $(seq 1 7); do
-        echo \
-            "$(tput setaf $i)Text$termPlain" \
-            "$termBold$(tput setaf $i)Text$termPlain" \
-            "$termUnderline$(tput setaf $i)Text$termPlain" \
-            "\$(tput setaf $i)"
+        printf "\$(tput setaf $i)"
+        printf "$(tput setaf $i)%6s$termPlain" "Text"
+        printf "$termBold$(tput setaf $i)%7s$termPlain" "Text"
+        printf "%3s$termUnderline$(tput setaf $i)%s$termPlain\n" "" "Text"
     done
 }
