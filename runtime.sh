@@ -15,6 +15,12 @@ require-module usage
 # The `trap' builtin overwrites the current trap command.
 # This function overcomes this limitation.
 #
+# Note that traps are inherited by subshells, such as those created by
+# $(command substitutions). Hence, a subshell will add the given trap
+# _on top of already existing traps from the parent_. In particular,
+# an EXIT trap will be executed twice: when the subshell finishes, and
+# again when the parent finishes.
+#
 function add-trap {
     local p=false
     OPTIND=1

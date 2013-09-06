@@ -72,17 +72,13 @@ function testing-failure-report {
 
 ### Testing framework.
 
-declare -g testSuite
-
 # test-suite <name>
 #
 function test-suite {
     local name="${1:-$(missing-argument "name")}"; shift
     unused-arguments "$@"
     test-suite-end
-    testSuite="$name"
-    testingSuccessCount=0
-    testingFailureCount=0
+    declare -g testSuite="$name"
     echo > "$testingResults"
     testing-message -k "$name: "
 }
@@ -91,11 +87,12 @@ function test-suite {
 function test-suite-end {
     unused-arguments "$@"
     [ -n "$testSuite" ] || return
-    unset testSuite
     local -i successes="$(grep testing-success-report < "$testingResults" | wc -l)"
     local -i failures="$(grep testing-failure-report < "$testingResults" | wc -l)"
     testing-progress " ($successes successes, $failures failures)"
     source "$testingResults"
+    debug-message "Finished suite: $testSuite"
+    unset testSuite
 }
 
 add-trap -p 'test-suite-end; info-message "Done testing."' EXIT

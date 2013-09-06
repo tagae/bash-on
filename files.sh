@@ -18,7 +18,7 @@ require-module $(uname)/files
 #
 function absolute-dirname {
     eval "$(preamble)"
-    _absolute-dirname "$name"
+    -absolute-dirname "$name"
 }
 
 # absolute-filename <name>
@@ -27,7 +27,7 @@ function absolute-dirname {
 #
 function absolute-filename {
     eval "$(preamble)"
-    _absolute-filename "$name"
+    -absolute-filename "$name"
 }
 
 # absolute-path <path>
@@ -37,9 +37,9 @@ function absolute-filename {
 function absolute-path {
     eval "$(preamble)"
     if  [ -d "$path" ]; then
-        _absolute-dirname "$path"
+        -absolute-dirname "$path"
     elif [ -e "$path" ]; then
-        _absolute-filename "$path"
+        -absolute-filename "$path"
     fi
 }
 
@@ -80,25 +80,27 @@ function relative-filename {
 # -p: Use <prefix> instead of the default 'generic'.
 # -c: Do not exit upon failure to create the file.
 # -v: Assign to global variable <var> instead of printing.
+# -d: Create a directory instead of a file.
 #
 function temp-file {
     # This function should not use the $(preamble) mechanism, because
     # it is used to test the 'usage' module itself.
     OPTIND=1
-    while getopts :cp:v: opt; do
+    while getopts :cp:v:d opt; do
         case $opt in
             (c) local continue="$OPTARG";;
             (p) local prefix="$OPTARG";;
             (v) local var="$OPTARG";;
+            (d) local diropt="-d";;
             (\?) unknown-option;;
             (:) missing-option-argument;;
         esac
     done
     shift $(($OPTIND-1))
     unused-arguments "$@"
-    local file="$(mktemp -t "${prefix-$(split-camelcase -s - "${var-tempFile}")}")"
+    local file="$(mktemp $diropt -t "${prefix-$(split-camelcase -s - "${var-tempFile}")}")"
     if [ $? -eq 0 ]; then
-        add-trap "rm '$file'" EXIT
+        add-trap "debug-message 'Removing $file'; rm -r '$file'" EXIT
         if [ "${var+given}" ]; then
             eval "declare -g $var='$file'"
         else

@@ -48,7 +48,9 @@ successLabel="[${successColor}OK${plainColor}] "
 
 ### Message levels.
 
-declare -Ag messageLevelPriority=(
+declare -Ag messageLevelPriority
+
+messageLevelPriority=(
     # Extra levels can be added dynamically if needed.
     [interact]=0
     [error]=1
@@ -59,7 +61,7 @@ declare -Ag messageLevelPriority=(
     [debug]=6
 )
 
-declare -g currentMessageLevel=info maxMessageLevel=info
+currentMessageLevel=info maxMessageLevel=info
 
 ### Interaction messages.
 
