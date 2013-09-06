@@ -1,14 +1,8 @@
 Bash On
 =======
 
-Yet another script to write today? No worries, just bash on!
-
-Bash On is a modular Bash library to help you write robust scripts.
-
-Licence
--------
-
-Bash On is distributed under the terms of GPLv3.
+Bash On is a modular library of Bash functions to write robust
+scripts.
 
 Support
 -------
@@ -75,3 +69,18 @@ To use `readlink` portably across GNU and BSD, do
 
 This mechanism will resolve at most one level of symlink indirection,
 which is sufficient in most cases.
+
+Licence
+-------
+
+Copyright 2013 Sebastián González Montesinos
+
+Licensed under the Apache License, Version 2.0.
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied.  See the License for the specific language governing
+permissions and limitations under the License.
