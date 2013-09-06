@@ -1,8 +1,7 @@
 Bash On
 =======
 
-Bash On is a modular library of Bash functions to write robust
-scripts.
+A modular library of Bash functions.
 
 Support
 -------
@@ -10,15 +9,14 @@ Support
 The library uses features introduced in Bash 4, and therefore does not
 work with older versions of Bash.
 
-### Tip
+Since the library has been conceived for Bash, the shebang of your
+script has to be `#!/bin/bash` rather than the more generic
+`#!/bin/sh`.
 
-You can use a newer version of bash by having your script start with
-
-    #!/usr/bin/env bash
-
-instead of the traditional `/bin/bash`. Of course this requires that
-the newer version of `bash` is found first in the current `PATH`.  For
-this very reason, such invocation may bring security problems.
+For multiple installed versions of Bash, you can bring forward the one
+you need by setting the current `PATH` appropriately, and using as
+shebang `#!/usr/bin/env bash`. Mind that such invocation may bring
+security problems, if an attacker were able to manipulate your `PATH`.
 
 Installation
 ------------
