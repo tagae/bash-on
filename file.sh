@@ -89,7 +89,6 @@ function file-size {
 # -v: Interpret <name> as a variable name.
 #
 function require-file {
-    echo "${commandPreamble[require-file]}"
     eval "$(preamble)"
     if [ "${options[v]+given}" ]; then
         [ -e "${!name}" ] || error-message \
